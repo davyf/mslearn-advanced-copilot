@@ -1,6 +1,6 @@
 import json
 from os.path import dirname, abspath, join
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -34,6 +34,13 @@ def countries():
 @app.get('/countries/{country}/{city}/{month}')
 def monthly_average(country: str, city: str, month: str):
     return data[country][city][month]
+
+
+@app.get('/regions/{region}')
+def region_cities(region: str):
+    if region not in data:
+        raise HTTPException(status_code=404, detail="Region not found")
+    return list(data[region].keys())
 
 # Generate the OpenAPI schema:
 openapi_schema = app.openapi()

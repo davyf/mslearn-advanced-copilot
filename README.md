@@ -9,7 +9,92 @@ Gain more practical experience by using this repository that contains a Python W
 ## Requirements
 
 1. Enable your [GitHub Copilot service](https://github.com/github-copilot/signup)
-1. Open [this repository with Codespaces](https://codespaces.new/MicrosoftDocs/mslearn-copilot-codespaces-python)
+1. Open [this repository with Codespaces](https://codespaces.new/MicrosoftDocs/mslearn-advanced-copilot)
+
+## Run in the configured Codespace
+
+Open the Codespace using the link above and wait for the container build to
+finish. You can run the existing application without completing the exercises
+below.
+
+### Python environment
+
+The [development-container configuration](./.devcontainer/devcontainer.json)
+uses Python 3.10 (`3.10-bullseye`). Its
+[Dockerfile](./.devcontainer/Dockerfile) creates the virtual environment at
+`/home/vscode/venv` and installs [requirements.txt](./requirements.txt),
+including FastAPI, Uvicorn, and pytest, during the build. VS Code is configured
+to use `/home/vscode/venv/bin/python`.
+
+You do not need to create another virtual environment or install the
+dependencies again. The commands below use the existing environment explicitly;
+they do not require activating it or relying on the terminal's default Python.
+
+### Automatic startup and private preview
+
+When VS Code attaches to the Codespace, its `postAttachCommand` starts the
+application automatically from the repository root:
+
+```bash
+/home/vscode/venv/bin/uvicorn --host 0.0.0.0 main:app --reload
+```
+
+Uvicorn listens on port **8000** and reloads when application code changes.
+Do not start a second server while the automatic one is running. If you stop
+the server with **Ctrl+C** in its terminal, run the command above from the
+repository root to restart it.
+
+Port 8000 is configured for forwarding with the label **Application**, and its
+preview opens automatically when forwarded. If it does not open, use VS Code's
+**Ports** tab, find port **8000**, and choose **Open in Browser** or the preview
+action. Check that **Port Visibility** is **Private**; no public port is needed.
+Use the forwarded URL from the Ports tab when opening the API in your browser.
+The `0.0.0.0` server bind address does not require public port visibility.
+
+Opening `/` redirects to `/docs`, where you can try the API interactively.
+
+### Try the existing endpoints
+
+The routes in [main.py](./main.py) read the case-sensitive keys from
+[weather.json](./weather.json):
+
+| GET path | Response |
+| --- | --- |
+| `/countries` | The available country/region names. |
+| `/regions/{region}` | The city names for that region. |
+| `/countries/{country}/{city}/{month}` | That city's monthly `high` and `low`. |
+
+In `/docs`, expand `GET /regions/{region}`, select **Try it out**, enter
+`Spain`, and select **Execute**. Equivalently, append `/regions/Spain` to the
+forwarded URL. The HTTP 200 response is exactly:
+
+```json
+["Seville"]
+```
+
+Use the dataset's exact spelling and capitalization. An unknown region,
+including lowercase `spain`, returns HTTP 404 with
+`{"detail": "Region not found"}`. POST to the city-list route returns HTTP 405.
+For monthly weather, the existing URL is
+`/countries/Spain/Seville/January`, which returns `{"high": 61, "low": 41}`.
+
+### Run the existing tests
+
+From the repository root in a Codespace terminal, run:
+
+```bash
+/home/vscode/venv/bin/python -m pytest test_main.py
+```
+
+[test_main.py](./test_main.py) uses FastAPI's `TestClient`, so the tests do not
+need a separately running Uvicorn server. Importing the application also
+regenerates `.well-known/openapi.json`.
+
+**Known current failure:** the monthly-weather test requests
+`/regions/Spain/Seville/January`, but the application only registers monthly
+weather under `/countries/{country}/{city}/{month}`. That test fails because
+the requested URL returns 404 instead of 200; this is not a Codespace setup
+problem.
 
 ## 💪🏽 Exercise
 The current API is not exposing country/{country} which needs to be implemented to list cities. The route should allow only GET HTTP requests with a JSON response providing information from the historical high and low for that country, city, and given month.
